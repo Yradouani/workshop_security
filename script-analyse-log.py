@@ -42,22 +42,15 @@ def verifier_log(log_file, mots_inappropries, email_parent):
     else:
         print(f"Le fichier {log_file} n'existe pas.")
 
-log_file_path = r"C:\path\to\log.htm"
-mots_file_path = r"C:\path\to\mot.csv"
-email_parent = "utilisateur@exemple.com"
-
-def surveiller_fichier_log(log_file_path, mots_file_path, email_parent)
-    log_file = r"C:\Users\vraica\Downloads\log.htm"
-    
-    mots_file = r"C:\Users\vraica\Downloads\mot.csv"
-    
-    mots_df = pd.read_csv(mots_file, header=None)
-    mots_inappropries = mots_df[0].tolist()
+def surveiller_fichier_log(logs_file, words_file, email_parent):
+   
+    words_df = pd.read_csv(words_file, header=None)
+    words_inappropriates = words_df[0].tolist()
     
     email_parent = "mathiasduret@hotmail.fr"
     
     while True:
-        verifier_log(log_file, mots_inappropries, email_parent)
+        verifier_log(logs_file, words_inappropriates, email_parent)
         time.sleep(300) 
 
 surveiller_fichier_log()
