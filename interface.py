@@ -2,7 +2,8 @@ import tkinter as tk
 from tkinter import messagebox, simpledialog
 import pandas as pd
 import importlib.util
-
+from PIL import Image, ImageTk
+   
 def load_emails():
     try:
         df = pd.read_csv('./mail.csv')
@@ -33,8 +34,9 @@ def load_categories():
 # Fonction pour mettre à jour l'affichage des emails
 def update_email_display():
     email_list.delete(0, tk.END)
+    email_list.insert(tk.END, "  " )
     for email in emails:
-        email_list.insert(tk.END, email)
+        email_list.insert(tk.END, "  " + email + "  ")
 
 # Fonction pour ajouter un email
 def add_email():
@@ -119,9 +121,9 @@ def show_words_in_category(event):
         # Insérer les mots dans la listbox
         if words:
             for word in words:
-                words_listbox.insert(tk.END, word)
+                words_listbox.insert(tk.END, "  " + word)
         else:
-            words_listbox.insert(tk.END, "Aucun mot dans cette catégorie.")
+            words_listbox.insert(tk.END, " Aucun mot dans cette catégorie.")
 
         words_listbox.bind("<Double-Button-1>", lambda event: manage_word(words_listbox, category_name))
     else:
@@ -174,8 +176,9 @@ def delete_word(words_listbox, category_name, selected_word_index, manage_window
 # Fonction pour mettre à jour l'affichage des catégories
 def update_category_display():
     category_list.delete(0, tk.END)
+    category_list.insert(tk.END, "  ")
     for category in categories.keys():
-        category_list.insert(tk.END, category)
+        category_list.insert(tk.END, "  " + category + "  ")
     save_categories()
 
 def save_categories():
@@ -190,37 +193,50 @@ def save_categories():
 
 # ----------------------------------------------------------------------------------------------------
 root = tk.Tk()
-root.title("Gestion des Mails et Catégories")
+root.title("Gestion des mails et catégories")
+root.geometry("800x700")
+root.configure(bg="white")
 
 # Chargement des données
 emails = load_emails()
 categories = load_categories()
 
+try:
+    original_image = Image.open('SAP_Logo.png') 
+    resized_image = original_image.resize((160, 150), resample=Image.LANCZOS) 
+    logo_image = ImageTk.PhotoImage(resized_image)
+    logo_label = tk.Label(root, image=logo_image, bg="white")
+    logo_label.pack(pady=10)
+except Exception as e:
+    messagebox.showerror("Erreur", f"Impossible de charger le logo : {str(e)}")
+    
 # Liste des emails
-email_frame = tk.Frame(root)
-email_frame.pack(side=tk.LEFT, padx=10, pady=10)
+email_frame = tk.Frame(root, width=300, height=500, bg="white")
+email_frame.pack(side=tk.LEFT, ipadx=20, ipady=20, padx=10, pady=50)
+email_frame.pack_propagate(False)
 email_list = tk.Listbox(email_frame, width=30, height=15)
 email_list.pack()
 update_email_display()
 
-add_email_button = tk.Button(email_frame, text="Ajouter un Email", command=add_email)
-add_email_button.pack(pady=5)
-remove_email_button = tk.Button(email_frame, text="Supprimer un Email", command=remove_email)
-remove_email_button.pack(pady=5)
+
+def create_rounded_button(parent, text, command, bg, fg):
+    button = tk.Button(parent, text=text, command=command, bg=bg, fg=fg, padx=15, pady=5, bd=1, relief="ridge")
+    button.pack(pady=10, padx=10)
+    return button
 
 # Liste des catégories
-category_frame = tk.Frame(root)
-category_frame.pack(side=tk.LEFT, padx=10, pady=10)
+category_frame = tk.Frame(root, width=300, height=500, bg="white")
+category_frame.pack(side=tk.RIGHT, ipadx=20, ipady=20, padx=10, pady=50)
+category_frame.pack_propagate(False)
 category_list = tk.Listbox(category_frame, width=30, height=15)
 category_list.pack()
 update_category_display()
 
-add_category_button = tk.Button(category_frame, text="Ajouter une Catégorie", command=add_category)
-add_category_button.pack(pady=5)
-remove_category_button = tk.Button(category_frame, text="Supprimer une Catégorie", command=remove_category)
-remove_category_button.pack(pady=5)
-add_word_button = tk.Button(category_frame, text="Ajouter un Mot à la Catégorie", command=add_word)
-add_word_button.pack(pady=5)
+add_email_button = create_rounded_button(email_frame, "Ajouter un email", add_email, 'lightblue', 'black')
+remove_email_button = create_rounded_button(email_frame, "Supprimer un email", remove_email, 'lightcoral', 'black')
+add_category_button = create_rounded_button(category_frame, "Ajouter une catégorie", add_category, 'lightblue', 'black')
+remove_category_button = create_rounded_button(category_frame, "Supprimer une catégorie", remove_category, 'lightcoral', 'black')
+add_word_button = create_rounded_button(category_frame, "Ajouter un mot à la catégorie", add_word, 'lightgreen', 'black')
 
 # Lier le double clic à la fonction d'affichage des mots
 category_list.bind("<Double-Button-1>", show_words_in_category)
