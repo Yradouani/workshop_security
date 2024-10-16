@@ -142,7 +142,8 @@ def remove_category():
 def add_word():
     selected_category = category_list.curselection()
     if selected_category:
-        category_name = list(categories.keys())[selected_category[0]]
+        category_index = selected_category[0] - 1  
+        category_name = list(categories.keys())[category_index]
         new_word = simpledialog.askstring("Ajouter un mot", "Entrez le mot à ajouter:")
         
         if new_word:
