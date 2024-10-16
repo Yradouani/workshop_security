@@ -1,71 +1,61 @@
-import time
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import pandas as pd
 import os
-import json
+import emails_config
+import dictionnary
+from interface import load_emails
 
-from dictionnary import sensitive_words 
+# Fonction pour envoyer un email
+def envoyer_alerte(theme, mot_detecte):
+    mail_file = load_emails()
+    print(mail_file)
+    for mail_address in mail_file:
+        
+        msg = MIMEMultipart()
+        msg['From'] = 'test@scryptoura.com'
+        msg['To'] = mail_address
+        msg['Subject'] = emails_config.emails_par_theme[theme]['Objet']
 
+        message = emails_config.emails_par_theme[theme]['Contenu']
+        msg.attach(MIMEText(message, 'plain'))
 
-def charger_contenu_emails(emails_config):
-    with open(emails_config, 'r', encoding='utf-8') as f:
-        return json.load(f)
-        print(contenu_emails.columns)
+        # Envoyer l'email via SMTP sécurisé (SSL)
+        try:
+            server = smtplib.SMTP_SSL('mail.scryptoura.com', 465)  
+            server.login('test@scryptoura.com', 'MamanPapa*1') 
+            text = msg.as_string()
+            server.sendmail('test@scryptoura.com', mail_address, text)
+            server.quit()
+            print(f"Alerte envoyée à {mail_address} pour le mot '{mot_detecte}' dans le thème '{theme}'")
+        except Exception as e:
+            print(f"Erreur lors de l'envoi de l'alerte : {e}")
 
-def envoyer_alerte(email_parent, thématique, contenu_emails):
-    email_data = contenu_emails[contenu_emails['thématique'] == thématique].iloc[0]
-    
-    msg = MIMEMultipart()
-    msg['From'] = 'test@scryptoura.com'
-    msg['To'] = email_parent
-    msg['Subject'] = email_data['objet']
+mots_detectes = set()
 
-    message_complet = f"{email_data['message']}\n\n{email_data['ressources']}"
-    msg.attach(MIMEText(message_complet, 'plain'))
-
-    try:
-        server = smtplib.SMTP_SSL('mail.scryptoura.com', 465)
-        server.login('test@scryptoura.com', 'MamanPapa*1')  
-        text = msg.as_string()
-        server.sendmail('test@scryptoura.com', email_parent, text)
-        server.quit()
-        print(f"Alerte envoyée à {email_parent} pour la thématique {thématique}")
-    except Exception as e:
-        print(f"Erreur lors de l'envoi de l'alerte : {e}")
-
-def verifier_log(log_file, email_parent, contenu_emails):
+def verifier_log(log_file, sensitive_words):
     if os.path.exists(log_file):
+        print(f"Le fichier {log_file} existe.")
         try:
             with open(log_file, 'r', encoding='ISO-8859-1') as f:
-                contenu_log = f.read()
-
-                for thématique, mots in sensitive_words.items():
+                contenu_log = f.read().lower() 
+                print("Contenu du fichier de log chargé.")
+                
+                for theme, mots in sensitive_words.items():
+                    print(f"Vérification des mots pour le thème '{theme}'.")
                     for mot in mots:
-                        if mot in contenu_log:
-                            print(f"Mot détecté : {mot} dans la thématique {thématique}")
-                            envoyer_alerte(email_parent, thématique, contenu_emails)
-                            return 
+                        mot = mot.lower() 
+                        if mot in contenu_log and mot not in mots_detectes:
+                            print(f"Mot détecté : {mot} dans le thème {theme}")
+                            envoyer_alerte(theme, mot)
+                            mots_detectes.add(mot)  
+                            break
         except UnicodeDecodeError:
             print("Erreur de décodage du fichier de log.")
     else:
         print(f"Le fichier {log_file} n'existe pas.")
 
-# Fonction pour surveiller le fichier log
-def surveiller_fichier_log(log_file, email_parent, fichier_emails):
-    contenu_emails = charger_contenu_emails(fichier_emails)
-    while True:
-        verifier_log(log_file, email_parent, contenu_emails)
-        time.sleep(300)  
-
-def charger_configuration(fichier_config):
-    config = {}
-    with open(fichier_config, 'r') as f:
-        for line in f:
-            key, value = line.strip().split('=')
-            config[key] = value
-    return config
-
-config = charger_configuration('config.txt')
-surveiller_fichier_log(config['logs_file'], config['email_parent'], config['emails_config'])
+    
+log_file = r"log.htm"
+verifier_log(log_file, dictionnary.sensitive_words)
