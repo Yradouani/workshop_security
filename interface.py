@@ -3,7 +3,69 @@ from tkinter import messagebox, simpledialog
 import pandas as pd
 import importlib.util
 from PIL import Image, ImageTk
+import os
+import subprocess
    
+def task_exists(task_name):
+    try:
+        # Exécute la commande et récupère le résultat
+        result = subprocess.run(['schtasks', '/query', '/tn', task_name], capture_output=True, text=True)
+        
+        # Si le retour est 0, la tâche existe
+        if result.returncode == 0:
+            return True
+        else:
+            return False
+    except Exception as e:
+        print(f"Erreur lors de la vérification de la tâche : {e}")
+        return False
+    
+def charger_configuration(fichier_config):
+    config = {}
+    with open(fichier_config, 'r') as f:
+        for line in f:
+            key, value = line.strip().split('=')
+            config[key] = value
+    return config
+
+config = charger_configuration('config.txt')
+
+def trigger_task(state):
+    if state == "activate":
+        print(config["path_to_script"])
+        # Vérifiez si la tâche existe
+        try:
+            if task_exists("AnalyseLogTask"):
+                print("La tâche existe déjà.")
+            else:
+                # Si la tâche n'existe pas, créez-la
+                os.system(f'schtasks /create /tn "AnalyseLogTask" /tr "python ./script-analyse-log.py" /sc minute /mo 2')
+                print("Tâche créée : AnalyseLogTask")
+
+            # Lancer la tâche
+            os.system('schtasks /run /tn "AnalyseLogTask"')
+            print("Application activée, tâche lancée.")
+        except Exception as e:
+            print(f"Erreur lors de la vérification de la tâche : {str(e)}")
+    else:
+        try:
+            os.system('schtasks /delete /tn "AnalyseLogTask" /f')
+            print("Tâche supprimée : AnalyseLogTask")
+        except Exception as e:
+            print(f"Erreur lors de la suppression de la tâche : {str(e)}")
+        print("Application désactivée.")
+
+  
+def toggle_app():
+    if task_exists("AnalyseLogTask"):        
+        activate_button.config(text="Activer l'application")
+        print("Désactivation de l'application.")
+        trigger_task("deactivate")
+    else:        
+        activate_button.config(text="Désactiver l'application")
+        print("activation de l'application.")
+        trigger_task("activate")
+        
 def load_emails():
     try:
         df = pd.read_csv('./mail.csv')
@@ -96,9 +158,12 @@ def add_word():
 # Fonction pour afficher les mots d'une catégorie
 def show_words_in_category(event):
     selected_category = category_list.curselection()
+    print(selected_category)
     if selected_category:
-        category_name = list(categories.keys())[selected_category[0]]
+        category_index = selected_category[0] - 1  
+        category_name = list(categories.keys())[category_index]
         words = categories[category_name]
+        print(category_name)
         
         # Créer une nouvelle fenêtre pour afficher les mots
         words_window = tk.Toplevel(root)
@@ -197,7 +262,6 @@ root.title("Gestion des mails et catégories")
 root.geometry("800x700")
 root.configure(bg="white")
 
-# Chargement des données
 emails = load_emails()
 categories = load_categories()
 
@@ -219,8 +283,8 @@ email_list.pack()
 update_email_display()
 
 
-def create_rounded_button(parent, text, command, bg, fg):
-    button = tk.Button(parent, text=text, command=command, bg=bg, fg=fg, padx=15, pady=5, bd=1, relief="ridge")
+def create_rounded_button(parent, text, command, bg, fg, width=20):
+    button = tk.Button(parent, text=text, command=command, bg=bg, fg=fg, padx=15, pady=5, bd=1, relief="ridge", width=width, cursor="hand2")
     button.pack(pady=10, padx=10)
     return button
 
@@ -237,6 +301,13 @@ remove_email_button = create_rounded_button(email_frame, "Supprimer un email", r
 add_category_button = create_rounded_button(category_frame, "Ajouter une catégorie", add_category, 'lightblue', 'black')
 remove_category_button = create_rounded_button(category_frame, "Supprimer une catégorie", remove_category, 'lightcoral', 'black')
 add_word_button = create_rounded_button(category_frame, "Ajouter un mot à la catégorie", add_word, 'lightgreen', 'black')
+
+if task_exists("AnalyseLogTask"):
+    activate_button = tk.Button(root, text="Désactiver l'application", command=toggle_app, bg='lightgreen', fg='black', padx=15, pady=5, bd=1, relief="ridge", width=50, cursor="hand2")
+    activate_button.pack(pady=10, padx=10, fill='x')
+else:
+    activate_button = tk.Button(root, text="Activer l'application", command=toggle_app, bg='lightgreen', fg='black', padx=15, pady=5, bd=1, relief="ridge", width=50, cursor="hand2")
+    activate_button.pack(pady=10, padx=10, fill='x')
 
 # Lier le double clic à la fonction d'affichage des mots
 category_list.bind("<Double-Button-1>", show_words_in_category)
