@@ -259,7 +259,7 @@ def save_categories():
 # ----------------------------------------------------------------------------------------------------
 root = tk.Tk()
 root.title("Gestion des mails et catégories")
-root.geometry("800x700")
+root.geometry("950x700")
 root.configure(bg="white")
 
 emails = load_emails()
