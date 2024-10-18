@@ -111,8 +111,9 @@ def add_email():
 # Fonction pour supprimer un email
 def remove_email():
     selected_email = email_list.curselection()
+    print(selected_email)
     if selected_email:
-        email_to_remove = emails[selected_email[0]]
+        email_to_remove = emails[selected_email[0] - 1]
         emails.remove(email_to_remove)
         save_emails(emails)
         update_email_display()
@@ -233,6 +234,7 @@ def modify_word(words_listbox, category_name, selected_word_index, manage_window
 
 # Fonction pour supprimer un mot
 def delete_word(words_listbox, category_name, selected_word_index, manage_window):
+    print(words_listbox.get(selected_word_index))
     categories[category_name].remove(words_listbox.get(selected_word_index))
     update_category_display()
     words_listbox.delete(selected_word_index) 
